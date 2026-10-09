@@ -274,14 +274,21 @@ function echoableRequestId(body: unknown): RequestId | null {
     return typeof id === 'string' || typeof id === 'number' ? id : null;
 }
 
-function jsonRpcErrorResponse(httpStatus: number, code: number, message: string, data?: unknown, id: RequestId | null = null): Response {
+function jsonRpcErrorResponse(
+    httpStatus: number,
+    code: number,
+    message: string,
+    data?: unknown,
+    id: RequestId | null = null,
+    headers?: HeadersInit
+): Response {
     return Response.json(
         {
             jsonrpc: '2.0',
             error: { code, message, ...(data !== undefined && { data }) },
             id
         },
-        { status: httpStatus }
+        { status: httpStatus, headers }
     );
 }
 
@@ -335,7 +342,7 @@ function createLegacyStatelessFallback(
 ): LegacyHttpHandler {
     return async (request, options) => {
         if (request.method.toUpperCase() !== 'POST') {
-            return jsonRpcErrorResponse(405, -32_000, 'Method not allowed.');
+            return jsonRpcErrorResponse(405, -32_000, 'Method not allowed.', undefined, null, { Allow: 'POST' });
         }
         try {
             const product = await factory({
